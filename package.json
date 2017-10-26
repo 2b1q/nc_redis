@@ -1,0 +1,19 @@
+{
+  "name": "nc",
+  "version": "1.0.0",
+  "description": "test Msg generator/handler cluster app",
+  "main": "app.js",
+  "scripts": {
+    "start": "node ./app.js"
+  },
+  "author": "2bb3qq@gmail.com",
+  "license": "ISC",
+  "dependencies": {
+    "cluster": "^0.7.7",
+    "connect-mongo": "^2.0.0",
+    "promise-redis": "0.0.5",
+    "randomstring": "^1.1.5",
+    "redis": "^2.8.0",
+    "winston": "^2.4.0"
+  }
+}
