@@ -19,10 +19,6 @@ function startWorker() {
   var worker = cluster.fork();
   if( generator_ID == worker.id ) log.warn('\n[worker "%s"] => MSG generator (pid %d) started', config.workers.name[worker.id-1], worker.process.pid);
   else log.info('\n[worker "%s"] => Event Hanler (pid %d) started', config.workers.name[worker.id-1], worker.process.pid);
-
-  // Send a message from the master process to the worker.
-  // worker.send({msgFromMaster: 'This is from master ' + process.pid + ' to worker ' + worker.pid + '.'});
-  // worker.send({generator_ID: generator_ID});
 }
 
 // master cluster process
@@ -36,12 +32,9 @@ if(cluster.isMaster){
     if(config.generator.redis_id !== undefined) generator_ID = config.generator.redis_id;
     if(config.generator.random_id !== undefined) generator_ID = config.generator.random_id;
     generator_ID = parseInt(generator_ID);
-    // var generator_ID = config.generator.redis_id;
-    //  log.info('____generator_REDIS_ID (%s)', config.generator.redis_id)
-    //  log.info('____generator_RANDOM_ID (%s)', config.generator.random_id)
-     log.warn('generator_ID: %s',generator_ID)
-     // write generator_ID to Redis store
-     backend.setid(generator_ID);
+    log.warn('generator_ID: %s',generator_ID)
+    // write generator_ID to Redis store
+    backend.setid(generator_ID);
   }, 1000);
 
 /*
@@ -89,9 +82,8 @@ if(cluster.isMaster){
           'worker_id': worker_id,
           'timestamp': timestamp()
         });
+        cluster.workers[generator_ID].send({generator_ID: generator_ID}); // send MSG to workers WHO is generator (IPC channel)
       }
-
-      cluster.workers[id].send({generator_ID: generator_ID}); // send MSG to workers WHO is generator
     }
   }, config.generator.timeout);
 
@@ -104,23 +96,21 @@ if(cluster.isMaster){
     startWorker();
   });
 } else {
+  // read generator_ID from Redis
+  backend.getid();
 
-//   if(config.generator.redis_id !== undefined) generator_ID = config.generator.redis_id;
-//   if(config.generator.random_id !== undefined) generator_ID = config.generator.random_id;
-//   console.log('generator_ID ::::' +generator_ID);
-// // read from Redis
-// setInterval(() => {
-//   // if worker IS NOT generator
-//   if( generator_ID !== cluster.worker.id ){
-//     log.info('[worker %d] Read FROM Redis', cluster.worker.id)
-//     console.log('generator_ID ::::' +generator_ID);
-//
-//   }
-// }, config.eventhandler.poll_period);
+  setInterval(() => {
+    generator_ID = parseInt(config.generator.redis_id);
+    // if worker IS NOT generator
+    if( generator_ID !== cluster.worker.id ){
+      log.info('[worker %d] read generator_ID from Redis => %d', cluster.worker.id,generator_ID)
+      console.log('generator_ID :::::::' +generator_ID);
+    }
+  }, config.eventhandler.poll_period);
 
-  // Receive messages from the master process.
+  // Receive messages from the master process. (IPC channel)
   process.on('message', function(msg) {
-    console.log('Worker ' + process.pid + ' received message from master.', msg);
+    console.log('Worker ' + process.pid + ' received message from master over IPC channel.', msg);
   });
 
 
