@@ -20,6 +20,13 @@ config.generator = {
   random_id: undefined
 };
 
+config.color = {
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  cyan: "\x1b[36m",
+  green: "\x1b[32m"
+}
+
 config.eventhandler = {
   poll_period: 500 //ms
 };

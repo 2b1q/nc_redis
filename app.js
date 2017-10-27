@@ -67,7 +67,7 @@ if(cluster.isMaster){
                           + new Date().getMinutes() + ':'
                           + new Date().getMilliseconds(); // timestamp
         log.warn('[worker "%s"] (MSG generator)\n %s', worker_name, msg);
-        log.info('timestamp: "%s"', timestamp());
+        // log.info('timestamp: "%s"', timestamp());
         // hashes (objects) in Redis. For that you can use hmset()
         // msg_cnt = hash KEY
         // before write hash check IS exists msg_cnt
@@ -75,7 +75,7 @@ if(cluster.isMaster){
         ++msg_cnt;
         var id =  msg_cnt.toString();
         var hashid = generator.hashid(id);
-        log.info('hashid: %s',hashid);
+        log.info(config.color.green+'write to Redis store keyid '+config.color.yellow+'%s',hashid);
         client.hmset(hashid, {
           'msg': msg,
           'worker_name': worker_name,

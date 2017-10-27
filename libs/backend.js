@@ -35,7 +35,7 @@ var get_msg = function(keyid){
 // remove msg
 var rm_msg = function(keyid){
   client.del(keyid, function(err, reply) {
-    log.warn('\nRemove KEY "%s" Replay: %s',keyid,reply);
+    log.warn(config.color.green+'\nRead and Remove KEY '+config.color.yellow+'%s'+config.color.cyan+' Replay: %s',keyid,reply);
   });
 }
 
