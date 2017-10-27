@@ -5,46 +5,9 @@ var cluster = require('cluster'),
     backend = require('./libs/backend'),
     generator = require('./models/msg_generator');
 
-// init backend (check redis and get generator key)
-
-var client = backend.client;
+var client = backend.client; // init redis store client
 var msg_cnt = 0; // msg counter
-// var generator_ID = backend.generator_ID();
-// console.log('generator_ID:\n'+generator_ID);
-
-/*
-// Попробуем записать и прочитать
-client.set('myKey', 'Hello Redis', function (err, repl) {
-    if (err) {
-           // Оо что то случилось при записи
-           console.log('Что то случилось при записи: ' + err);
-           client.quit();
-    } else {
-           // Прочтем записанное
-           client.get('myKey', function (err, repl) {
-                   //Закрываем соединение, так как нам оно больше не нужно
-                   client.quit();
-                   if (err) {
-                           console.log('Что то случилось при чтении: ' + err);
-                   } else if (repl) {
-                   // Ключ найден
-                           console.log('Ключ: ' + repl);
-               } else {
-                   // Ключ ненайден
-                   console.log('Ключ ненайден.')
-
-           };
-           });
-    };
-});
-1) String — это самый простой тип ключей, представляет собой структуру Ключ -> Значение. Несмотря на то что он называется String, сюда можно записывать строковые, числовые и битовые значения.
-2) List — этот тип данных представляет собой аналог массивов.
-3) Hashes — это специальный тип данных, представляющий собой структуру Поле -> Значение. В качестве типов полей могут быть строки и числа.
-4) Set / Sortedset — Последние два типа. представляют собой множества. Причем sortedset является отсортированным множеством. Значения сортируются по весу, вес нужно задавать самостоятельно.
-*/
-
-
-// var app = express();
+var generator_ID;
 
 // start worker
 function startWorker() {
@@ -54,16 +17,33 @@ function startWorker() {
       else fork() EventHanler workers
   */
   var worker = cluster.fork();
-  if( generator_ID == worker.id ) log.info('\n[worker "%s"] => MSG generator (pid %d) started', config.workers.name[worker.id-1], worker.process.pid);
+  if( generator_ID == worker.id ) log.warn('\n[worker "%s"] => MSG generator (pid %d) started', config.workers.name[worker.id-1], worker.process.pid);
   else log.info('\n[worker "%s"] => Event Hanler (pid %d) started', config.workers.name[worker.id-1], worker.process.pid);
+
+  // Send a message from the master process to the worker.
+  // worker.send({msgFromMaster: 'This is from master ' + process.pid + ' to worker ' + worker.pid + '.'});
+  // worker.send({generator_ID: generator_ID});
 }
 
 // master cluster process
 if(cluster.isMaster){
-  console.log('[Master] (pid %d) started',process.pid);
-  // read from Redis (who is generator)
-  var generator_ID = backend.getid();
-  log.info('generator_ID (%s)', generator_ID)
+  log.info('[Master] (pid %d) started',process.pid);
+  // get generator_ID from Redis store
+  backend.getid();
+  // var generator_ID;
+
+  setInterval(() => {
+    if(config.generator.redis_id !== undefined) generator_ID = config.generator.redis_id;
+    if(config.generator.random_id !== undefined) generator_ID = config.generator.random_id;
+    generator_ID = parseInt(generator_ID);
+    // var generator_ID = config.generator.redis_id;
+    //  log.info('____generator_REDIS_ID (%s)', config.generator.redis_id)
+    //  log.info('____generator_RANDOM_ID (%s)', config.generator.random_id)
+     log.warn('generator_ID: %s',generator_ID)
+     // write generator_ID to Redis store
+     backend.setid(generator_ID);
+  }, 1000);
+
 /*
   1. read from redis who is generator
   2. if no record set rand generator worker1-10
@@ -76,6 +56,11 @@ if(cluster.isMaster){
     startWorker();
   });
 
+  cluster.on('online', (worker) => {
+    console.log('worker %s responded after it was forked', worker.id);
+  });
+
+  // generate msg (Redis hset)
   setInterval(() => {
     for(var id in cluster.workers) {
       if( cluster.workers[id].id === generator_ID ) {
@@ -88,7 +73,7 @@ if(cluster.isMaster){
                           + new Date().getHours() + ':'
                           + new Date().getMinutes() + ':'
                           + new Date().getMilliseconds(); // timestamp
-        log.info('[worker "%s"] (MSG generator)\n %s', worker_name, msg);
+        log.warn('[worker "%s"] (MSG generator)\n %s', worker_name, msg);
         log.info('timestamp: "%s"', timestamp());
         // hashes (objects) in Redis. For that you can use hmset()
         // msg_cnt = hash KEY
@@ -105,8 +90,11 @@ if(cluster.isMaster){
           'timestamp': timestamp()
         });
       }
+
+      cluster.workers[id].send({generator_ID: generator_ID}); // send MSG to workers WHO is generator
     }
   }, config.generator.timeout);
+
 
   cluster.on('disconnect', function(worker){
     log.error('[worker "%s"] (pid %d) disconnected.', config.workers.name[worker.id-1], worker.process.pid);
@@ -117,12 +105,23 @@ if(cluster.isMaster){
   });
 } else {
 
-  // notify master about the request
-  // Worker processes have a http server.
-  // process.on('message', (msg) => {
-  //   console.log('[worker id (%d)] msg %s',worker.id, msg);
-  // });
+//   if(config.generator.redis_id !== undefined) generator_ID = config.generator.redis_id;
+//   if(config.generator.random_id !== undefined) generator_ID = config.generator.random_id;
+//   console.log('generator_ID ::::' +generator_ID);
+// // read from Redis
+// setInterval(() => {
+//   // if worker IS NOT generator
+//   if( generator_ID !== cluster.worker.id ){
+//     log.info('[worker %d] Read FROM Redis', cluster.worker.id)
+//     console.log('generator_ID ::::' +generator_ID);
+//
+//   }
+// }, config.eventhandler.poll_period);
 
+  // Receive messages from the master process.
+  process.on('message', function(msg) {
+    console.log('Worker ' + process.pid + ' received message from master.', msg);
+  });
 
 
 }

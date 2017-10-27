@@ -47,24 +47,36 @@ client.on('error', function (err) {
 //     });
 // }
 
+// get generator_ID
 var getid = function(){
-  var genid;
   client.get('generator', function (err, key) {
     if(err) log.error('Can`t read from Redis store: %s', err);
     else if (key) {
       // key exist
-      log.info('key: %s', key);
+      log.info('GET generator_ID from Redis: "%s"', key);
+      config.generator.redis_id = key; // update generator ID from runtime (from redis)
     } else {
       // key not exist
       log.info('key "generator" not found');
       log.info('Set random generator ID');
+      config.generator.random_id = Math.floor(Math.random() * config.workers.name.length)+1;
     };
   });
-  return genid || Math.floor(Math.random() * config.workers.name.length)+1;
+}
+
+//set generator_ID
+var setid = function(genid){
+  client.set('generator', genid, function (err, repl) {
+    if(err) {
+      log.error('Can`t write to Redis %s', err);
+      client.quit();
+    } else log.info('write genid "%d" sucsess. Replay %s',genid, repl);
+  });
 }
 
 module.exports = {
     client: client,
-    getid:  getid
+    getid:  getid,
+    setid: setid
 };
 // module.exports.client = client;

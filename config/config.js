@@ -15,7 +15,9 @@ config.workers = {
 
 config.generator = {
   stringSize: 5,
-  timeout: 1000
+  timeout: 1000,
+  redis_id: undefined,
+  random_id: undefined
 };
 
 config.eventhandler = {
