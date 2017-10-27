@@ -12,3 +12,13 @@ This is test NodeJS application for education purpose which use cluster and Redi
 
 # Install
 git clone https://bitbucket.org/b-b-q/nc.git && cd ./nc && npm install
+
+# Redis in Docker
+* docker run -p 6379:6379 --name redis -d redis (download docker IMG from Docker HUB and run container [--name 'redis'] AS daemon [-d]). [-p => pass/forward ports from container to host]
+* docker stop redis [stop container redis]
+* docker start redis [start container redis]
+
+  docker exec -ti redis redis-cli --scan --pattern '*' (get all keys from redis Store)
+  docker exec -ti redis redis-cli HGETALL a87ff679a2f3e71d9181a67b7542122c (get hashes object)
+  docker exec -ti redis redis-cli get generator (lookup 'who is generator')
+  docker exec -ti redis redis-cli flushall (drop all keys)
