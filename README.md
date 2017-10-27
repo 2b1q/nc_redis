@@ -18,8 +18,8 @@ git clone https://bitbucket.org/b-b-q/nc.git && cd ./nc && npm install
 * docker stop redis [stop container redis]
 * docker start redis [start container redis]
 
-redis-cli commands
-*  docker exec -ti redis redis-cli --scan --pattern '*' (get all keys from redis Store)
-*  docker exec -ti redis redis-cli HGETALL a87ff679a2f3e71d9181a67b7542122c (get hashes object)
-*  docker exec -ti redis redis-cli get generator (lookup 'who is generator')
-*  docker exec -ti redis redis-cli flushall (drop all keys)
+# redis-cli commands
+* docker exec -ti redis redis-cli --scan --pattern '*' (get all keys from redis Store)
+* docker exec -ti redis redis-cli HGETALL a87ff679a2f3e71d9181a67b7542122c (get hashes object)
+* docker exec -ti redis redis-cli get generator (lookup 'who is generator')
+* docker exec -ti redis redis-cli flushall (drop all keys)
