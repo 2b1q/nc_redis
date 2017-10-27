@@ -10,10 +10,9 @@
   "license": "ISC",
   "dependencies": {
     "cluster": "^0.7.7",
-    "connect-mongo": "^2.0.0",
-    "promise-redis": "0.0.5",
     "randomstring": "^1.1.5",
     "redis": "^2.8.0",
+    "redis-promise": "^0.1.0",
     "winston": "^2.4.0"
   }
 }

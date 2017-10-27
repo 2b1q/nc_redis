@@ -5,13 +5,12 @@ var cluster = require('cluster'),
     backend = require('./libs/backend'),
     generator = require('./models/msg_generator');
 
-var client = backend.redis; // redis client (add callback iff ERR log and exit)
-client.on("error", function (err) {
-  log.error('Ошибка подключения к Redis "%s"', err);
-  log.info('попробуйте запустить Redis:\n"docker start redis" если Redis ранее запускался в docker`e\nили\n"docker run -p 6379:6379 --name redis -d redis" для скачивания образа Redis и запуска контейнера Redis в docker`e')
-  process.exit(0);
-});
+// init backend (check redis and get generator key)
+
+var client = backend.client;
 var msg_cnt = 0; // msg counter
+// var generator_ID = backend.generator_ID();
+// console.log('generator_ID:\n'+generator_ID);
 
 /*
 // Попробуем записать и прочитать
@@ -45,12 +44,9 @@ client.set('myKey', 'Hello Redis', function (err, repl) {
 */
 
 
-
-
-
-
 // var app = express();
 
+// start worker
 function startWorker() {
   /*  read from redis who is MSG generator
       if no records => random worker [worker.id] is MSG generator
@@ -58,14 +54,16 @@ function startWorker() {
       else fork() EventHanler workers
   */
   var worker = cluster.fork();
-  if( generator_ID == worker.id ) log.info('[worker "%s"] => MSG generator (pid %d) started', config.workers.name[worker.id-1], worker.process.pid);
-  else log.info('[worker "%s"] => Event Hanler (pid %d) started', config.workers.name[worker.id-1], worker.process.pid);
-
+  if( generator_ID == worker.id ) log.info('\n[worker "%s"] => MSG generator (pid %d) started', config.workers.name[worker.id-1], worker.process.pid);
+  else log.info('\n[worker "%s"] => Event Hanler (pid %d) started', config.workers.name[worker.id-1], worker.process.pid);
 }
 
+// master cluster process
 if(cluster.isMaster){
   console.log('[Master] (pid %d) started',process.pid);
-  var generator_ID = Math.floor(Math.random() * config.workers.name.length)+1;
+  // read from Redis (who is generator)
+  var generator_ID = backend.getid();
+  log.info('generator_ID (%s)', generator_ID)
 /*
   1. read from redis who is generator
   2. if no record set rand generator worker1-10
