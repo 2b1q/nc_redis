@@ -24,3 +24,8 @@ This is test NodeJS application for education purpose which use cluster and Redi
 * docker exec -ti redis redis-cli HGETALL a87ff679a2f3e71d9181a67b7542122c (get hashes object)
 * docker exec -ti redis redis-cli get generator (lookup 'who is generator')
 * docker exec -ti redis redis-cli flushall (drop all keys)
+
+# Run
+1. locate to project folder
+2. docker start redis
+3. npm start
