@@ -96,28 +96,27 @@ if(cluster.isMaster){
     startWorker();
   });
 } else {
+  // workers runtime
   // read generator_ID from Redis
   backend.getid();
+  // var msg_id = 0;
 
   setInterval(() => {
     generator_ID = parseInt(config.generator.redis_id);
     // if worker IS NOT generator
     if( generator_ID !== cluster.worker.id ){
-      log.info('[worker %d] read generator_ID from Redis => %d', cluster.worker.id,generator_ID)
-      console.log('generator_ID :::::::' +generator_ID);
+      backend.get_keys();
     }
   }, config.eventhandler.poll_period);
 
   // Receive messages from the master process. (IPC channel)
   process.on('message', function(msg) {
-    console.log('Worker ' + process.pid + ' received message from master over IPC channel.', msg);
+    log.warn('Worker '+process.pid+' received message from master over IPC channel.', msg)
   });
-
-
 }
 
 
-
+// Process crash handler
 process.on('uncaughtException', function (err) {
     log.error((new Date).toUTCString() + ' uncaughtException:', err.message);
     log.error(err.stack);

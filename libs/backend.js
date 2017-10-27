@@ -20,32 +20,37 @@ client.on('error', function (err) {
   process.exit(0);
 });
 
-// var genid = function(){
-//   if(cluster.isMaster){
-//     var gid;
-//     client.get('generator', function (err, key) {
-//       if(err) log.error('Can`t read from Redis store: %s', err);
-//       else if (key) {
-//         // key exist
-//         log.info('key: %s', key);
-//       } else {
-//         // key not exist
-//         log.info('key "generator" not found');
-//         gid = Math.floor(Math.random() * config.workers.name.length)+1;
-//         // log.info('Set random generator ID: %d', generator_ID);
-//       };
-//     });
-//     return gid;
-//   }
-// }
+var get_msg = function(keyid){
+  client.exists(keyid, function(err, reply) {
+    if(reply === 1) {
+      //KEY exists. GET hashes object
+      client.hgetall(keyid, function(err, object) {
+        console.log(object);
+        rm_msg(keyid);
+      });
+    } else log.warn('KEY %s already readed from Redis store', keyid);
+  });
+}
 
+// remove msg
+var rm_msg = function(keyid){
+  client.del(keyid, function(err, reply) {
+    log.warn('\nRemove KEY "%s" Replay: %s',keyid,reply);
+  });
+}
 
-// var checkRedisReadyState = function() {
-//     return new Promise((resolve,reject) => {
-//         redis.once('ready', () => {redis.removeAllListeners('error'); resolve()});
-//         redis.once('error', e => reject(e));
-//     });
-// }
+var getall_keys = function(){
+  client.keys('*', function (err, keys) {
+    if(err) return log.error(err);
+    for(var i = 0, len = keys.length; i < len; i++) {
+      if(keys[i].length > 10) {
+        get_msg(keys[i]);
+        // console.log(keys[i]);
+        // return keys[i];
+      }
+    }
+  });
+}
 
 // get generator_ID
 var getid = function(){
@@ -77,6 +82,7 @@ var setid = function(genid){
 module.exports = {
     client: client,
     getid:  getid,
-    setid: setid
+    setid: setid,
+    get_msg: get_msg,
+    get_keys: getall_keys
 };
-// module.exports.client = client;
